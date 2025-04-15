@@ -1,6 +1,6 @@
 # Hiyar Apocalypse: Bill Monday's Reign
 
-**Hiyar Apocalypse** is a faucet game specifically developed to break Monads! 
+**Hiyar Apocalypse** is a faucet game specifically developed to break Monad! 
 
 ## Screenshots
 
