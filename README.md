@@ -5,10 +5,10 @@
 ## Screenshots
 
 ### Main Menu
-![Main Menu](./public/screenshots/screenshot.png)
+![Main Menu](/public/screenshot.png)
 
 ### In Game
-![In Game](./public/screenshots/screenshot1.png)
+![In Game](/public/screenshot1.png)
 
 ### Game Over
-![Game Over](./public/screenshots/screenshot3.png)
+![Game Over](/public/screenshot3.png)
