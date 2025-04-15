@@ -19,7 +19,6 @@ class RelayerService {
    */
   public async addToQueue(account: string) {
     try {
-      console.log('İşlem kuyruğa ekleniyor:', account);
       const response = await fetch('/api/relayer', {
         method: 'POST',
         headers: {
@@ -32,23 +31,15 @@ class RelayerService {
       try {
         errorData = await response.json();
       } catch (e) {
-        console.error('API yanıtı JSON olarak parse edilemedi:', e);
         throw new Error('Invalid API response format');
       }
 
       if (!response.ok) {
-        console.error('API Hatası:', {
-          status: response.status,
-          statusText: response.statusText,
-          data: errorData
-        });
         throw new Error(`Failed to add transaction to queue: ${errorData.error || 'Unknown error'}`);
       }
 
-      console.log('İşlem başarıyla kuyruğa eklendi:', errorData);
       return errorData;
     } catch (error) {
-      console.error('İşlem kuyruğa eklenirken hata:', error);
       throw error;
     }
   }
@@ -60,7 +51,6 @@ class RelayerService {
    */
   public async addTokenRewardToQueue(coinCount: number, account: string) {
     try {
-      console.log('Token ödül işlemi kuyruğa ekleniyor:', { account, coinCount });
       const response = await fetch('/api/relayer', {
         method: 'POST',
         headers: {
@@ -73,23 +63,15 @@ class RelayerService {
       try {
         errorData = await response.json();
       } catch (e) {
-        console.error('API yanıtı JSON olarak parse edilemedi:', e);
         throw new Error('Invalid API response format');
       }
 
       if (!response.ok) {
-        console.error('API Hatası:', {
-          status: response.status,
-          statusText: response.statusText,
-          data: errorData
-        });
         throw new Error(`Failed to add token reward to queue: ${errorData.error || 'Unknown error'}`);
       }
 
-      console.log('Token ödül işlemi başarıyla kuyruğa eklendi:', errorData);
       return errorData;
     } catch (error) {
-      console.error('Token ödül işlemi kuyruğa eklenirken hata:', error);
       throw error;
     }
   }
@@ -99,30 +81,21 @@ class RelayerService {
    */
   public async getStatus() {
     try {
-      console.log('Relayer durumu kontrol ediliyor...');
       const response = await fetch('/api/relayer');
       
       let errorData;
       try {
         errorData = await response.json();
       } catch (e) {
-        console.error('API yanıtı JSON olarak parse edilemedi:', e);
         throw new Error('Invalid API response format');
       }
 
       if (!response.ok) {
-        console.error('API Durum Hatası:', {
-          status: response.status,
-          statusText: response.statusText,
-          data: errorData
-        });
         throw new Error(`Failed to get relayer status: ${errorData.error || 'Unknown error'}`);
       }
       
-      console.log('Relayer durumu:', errorData);
       return errorData;
     } catch (error) {
-      console.error('Relayer durumu alınırken hata:', error);
       throw error;
     }
   }
@@ -136,7 +109,7 @@ export const recordBossDamage = async (damage: number, account: string) => {
   try {
     return await relayerService.addToQueue(account);
   } catch (error) {
-    console.error('Boss hasar kaydı başarısız:', error);
+    console.error('Boss damage record failed:', error);
     throw error;
   }
 };
@@ -145,7 +118,7 @@ export const collectToken = async (coinCount: number, account: string) => {
   try {
     return await relayerService.addTokenRewardToQueue(coinCount, account);
   } catch (error) {
-    console.error('Token toplama başarısız:', error);
+    console.error('Token collection failed:', error);
     throw error;
   }
 }; 
