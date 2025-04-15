@@ -1,10 +1,11 @@
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 
-
+/**
+ * Social component that displays creator profiles with hover effects
+ * Each profile links to their respective social media accounts
+ */
 export default function Social() {
-
-
   return (
     <div className="flex flex-col items-center gap-4">
       <h2 className="text-white text-2xl font-bold mb-4 font-[Poppins] tracking-wider uppercase relative after:content-[''] after:absolute after:-bottom-2 after:left-1/2 after:-translate-x-1/2 after:w-16 after:h-1 after:bg-green-500 after:rounded-full">Creators</h2>
@@ -21,7 +22,7 @@ export default function Social() {
             kandor
           </span>
         </a>
-        <a href="https://x.com/0xSabotsuke" target="_blank" rel="noopener noreferrer" className="rounded-full overflow-hidden w-16 h-16 hover:scale-110 transition-transform group relative">
+        <a href="https://x.com/sabodev_" target="_blank" rel="noopener noreferrer" className="rounded-full overflow-hidden w-16 h-16 hover:scale-110 transition-transform group relative">
           <Image
             src="/social/sabo.jpg"
             alt="sabo" 
@@ -58,7 +59,6 @@ export default function Social() {
           </span>
         </a>
       </div>
-      
     </div>
   );
 }

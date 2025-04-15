@@ -1,38 +1,28 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import * as PIXI from "pixi.js";
 
 interface GroundProps {
   app: PIXI.Application;
 }
 
+/**
+ * Ground component that renders a red rectangle at the bottom of the screen
+ * @param app - PIXI.Application instance
+ */
 const Ground = ({ app }: GroundProps) => {
-  const groundRef = useRef<PIXI.Graphics | null>(null);
-
   useEffect(() => {
-    if (!app?.stage || !app?.screen) return;
+    const ground = new PIXI.Graphics();
+    ground.beginFill(0xff0000);
+    ground.drawRect(0, app.screen.height - 50, app.screen.width, 50);
+    ground.endFill();
 
-    try {
-      // Zemin oluştur
-      const ground = new PIXI.Graphics();
-      ground.beginFill(0xff0000); // Kırmızı renk
-      ground.drawRect(0, app.screen.height - 50, app.screen.width, 50);
-      ground.endFill();
+    app.stage.addChild(ground);
 
-      // Zemini sahneye ekle
-      app.stage.addChild(ground);
-      groundRef.current = ground;
-
-      return () => {
-        if (groundRef.current && app?.stage) {
-          app.stage.removeChild(groundRef.current);
-          groundRef.current.destroy();
-          groundRef.current = null;
-        }
-      };
-    } catch (error) {
-      console.error("Ground oluşturma hatası:", error);
-    }
+    return () => {
+      app.stage.removeChild(ground);
+      ground.destroy();
+    };
   }, [app]);
 
   return null;

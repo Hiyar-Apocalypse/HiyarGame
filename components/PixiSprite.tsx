@@ -731,7 +731,7 @@ const PixiSprite = ({ isGamePage = false, account }: PixiSpriteProps) => {
           characterBounds.y < coinBounds.y + coinBounds.height &&
           characterBounds.y + characterBounds.height > coinBounds.y) {
         
-        console.log("Coin toplandı!");
+        console.log("Coin collected!");
         sendrewardToken();
 
         
@@ -890,7 +890,7 @@ const PixiSprite = ({ isGamePage = false, account }: PixiSpriteProps) => {
                   const frameName = `frame_${i}`;
                   const frameData = deathAtlasData.frames[frameName];
                   if (frameData) {
-                    console.log(`Death frame ${i} yükleniyor:`, frameData);
+                    console.log(`Loading death frame ${i}:`, frameData);
                     const texture = new PIXI.Texture(
                       deathTexture,
                       new PIXI.Rectangle(
@@ -904,7 +904,7 @@ const PixiSprite = ({ isGamePage = false, account }: PixiSpriteProps) => {
                   }
                 }
 
-                console.log(`Toplam ${deathFrames.length} death frame yüklendi`);
+                console.log(`Total ${deathFrames.length} death frames loaded`);
 
                 // Death sprite'ını oluştur ve ayarla
                 const deathSprite = new PIXI.AnimatedSprite(deathFrames);
@@ -939,12 +939,12 @@ const PixiSprite = ({ isGamePage = false, account }: PixiSpriteProps) => {
                   containerRef.current.addChild(deathSprite);
                 }
 
-                console.log("Death sprite oluşturuldu ve eklendi");
+                console.log("Death sprite created and added");
 
                 // Animasyonu oynat ve bitince 1. karede kal
                 deathSprite.onComplete = () => {
                   if (deathSprite && !deathSprite.destroyed) {
-                    console.log("Death animasyonu tamamlandı");
+                    console.log("Death animation completed");
                     deathSprite.gotoAndStop(1);
                     deathSprite.visible = true;
                     deathSprite.alpha = 1;
@@ -1516,11 +1516,11 @@ const PixiSprite = ({ isGamePage = false, account }: PixiSpriteProps) => {
       return;
     }
 
-    console.log("PixiJS yükleniyor...");
+    console.log("Loading PixiJS...");
 
     import('pixi.js').then(async (PIXI) => {
       try {
-        console.log("PixiJS yüklendi, uygulama başlatılıyor...");
+        console.log("PixiJS loaded, starting application...");
 
         // Eğer zaten bir uygulama varsa, yenisini oluşturma
         if (isInitialized && globalApp) {
@@ -1563,7 +1563,7 @@ const PixiSprite = ({ isGamePage = false, account }: PixiSpriteProps) => {
         app.stage.addChild(mainContainer);
         mainContainerRef.current = mainContainer;
 
-        console.log("Assets yükleniyor...");
+        console.log("Loading assets...");
 
         try {
           // Mermi texture'ını yükle
@@ -1663,7 +1663,7 @@ const PixiSprite = ({ isGamePage = false, account }: PixiSpriteProps) => {
           const fireTexture = await PIXI.Assets.load('/character_fire.png');
           const fireAtlasData = await fetch('/character_fire.json').then(res => res.json());
 
-          console.log("Assets yüklendi");
+          console.log("Assets loaded");
 
           // Walk frame'lerini oluştur
           const frames = [];
@@ -2133,7 +2133,7 @@ const PixiSprite = ({ isGamePage = false, account }: PixiSpriteProps) => {
             }
           });
 
-          console.log("Animasyon başarıyla başlatıldı");
+          console.log("Animation successfully started");
 
           // Event listener'ları temizle
           return () => {
@@ -2166,16 +2166,16 @@ const PixiSprite = ({ isGamePage = false, account }: PixiSpriteProps) => {
           };
 
         } catch (error) {
-          console.error("Asset işleme hatası:", error);
+          console.error("Asset processing error:", error);
           setError("Asset işlenemedi: " + (error as Error).message);
         }
 
       } catch (error) {
-        console.error("PIXI.js başlatma hatası:", error);
+        console.error("PIXI.js initialization error:", error);
         setError("PIXI.js başlatılamadı: " + (error as Error).message);
       }
     }).catch((error) => {
-      console.error("PIXI.js yüklenirken hata:", error);
+      console.error("Error while loading PIXI.js:", error);
       setError("PIXI.js yüklenemedi: " + error.message);
     });
 

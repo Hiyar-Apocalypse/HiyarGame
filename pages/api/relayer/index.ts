@@ -43,23 +43,16 @@ let totalTxCount = 0;
 const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL);
 
 function logDebug(...args: any[]) {
-  console.log('[DEBUG]', new Date().toISOString(), ...args);
+  // Debug logging disabled in production
 }
 
 // Relayer havuzunu başlat
 async function initializeRelayers() {
   try {
-    logDebug('Relayer havuzu başlatılıyor...');
-    
     // RPC bağlantısını kontrol et
     try {
       const network = await provider.getNetwork();
-      logDebug('RPC Bağlantısı başarılı:', {
-        name: network.name,
-        chainId: network.chainId
-      });
     } catch (error) {
-      console.error('[KRITIK HATA] RPC bağlantısı başarısız:', error);
       return false;
     }
 
@@ -72,12 +65,7 @@ async function initializeRelayers() {
         tempWallet
       );
       const owner = await gameContract.owner();
-      logDebug('Game contract kontrolü başarılı:', {
-        address: gameContract.address,
-        owner: owner
-      });
     } catch (error) {
-      console.error('[KRITIK HATA] Game contract kontrolü başarısız:', error);
       return false;
     }
 
@@ -92,7 +80,6 @@ async function initializeRelayers() {
           const balance = await provider.getBalance(address);
           
           if (balance.eq(0)) {
-            logDebug(`Relayer ${i} bakiyesi sıfır, atlanıyor:`, address);
             continue;
           }
 
@@ -102,27 +89,18 @@ async function initializeRelayers() {
           };
 
           loadedRelayerCount++;
-          logDebug(`Relayer ${i} yüklendi:`, {
-            address,
-            nonce,
-            balance: ethers.utils.formatEther(balance)
-          });
         } catch (error) {
-          console.error(`[HATA] Relayer ${i} yüklenemedi:`, error);
           continue;
         }
       }
     }
 
     if (loadedRelayerCount === 0) {
-      console.error('[KRITIK HATA] Hiç relayer yüklenemedi');
       return false;
     }
 
-    logDebug(`${loadedRelayerCount} relayer başarıyla yüklendi`);
     return true;
   } catch (error) {
-    console.error("[KRITIK HATA] Relayer havuzu başlatılırken beklenmeyen hata:", error);
     return false;
   }
 }
@@ -130,44 +108,28 @@ async function initializeRelayers() {
 // İşlem kuyruğunu işle
 async function processQueue() {
   if (isProcessingQueue || txQueue.length === 0) {
-    logDebug('Kuyruk işleme atlandı:', {
-      isProcessing: isProcessingQueue,
-      queueLength: txQueue.length
-    });
     return;
   }
 
   if (Object.keys(relayers).length === 0) {
-    logDebug('Relayer havuzu boş, yeniden başlatılıyor...');
     const initialized = await initializeRelayers();
     if (!initialized) {
-      console.error('[KRITIK HATA] Relayer havuzu başlatılamadı, kuyruk işleme durduruldu');
       return;
     }
   }
 
   isProcessingQueue = true;
-  logDebug('Kuyruk işleme başladı:', {
-    queueLength: txQueue.length,
-    relayerCount: Object.keys(relayers).length
-  });
 
   try {
     while (txQueue.length > 0) {
       const keys = Object.keys(relayers);
       if (keys.length === 0) {
-        throw new Error('Aktif relayer kalmadı');
+        throw new Error('No active relayers');
       }
 
       const selectedRelayerKey = keys[currentIndex];
       const selectedRelayer = relayers[selectedRelayerKey];
       const wallet = new ethers.Wallet(selectedRelayerKey, provider);
-
-      logDebug('Seçilen Relayer:', {
-        address: wallet.address,
-        index: currentIndex,
-        nonce: selectedRelayer.nonce
-      });
 
       if (!selectedRelayer || selectedRelayer.isProcessing) {
         currentIndex = (currentIndex + 1) % keys.length;
@@ -178,17 +140,11 @@ async function processQueue() {
         selectedRelayer.isProcessing = true;
         const tx = txQueue[0];
 
-        // Gas fiyatını kontrol et ve artır
         const gasPrice = await provider.getGasPrice();
-        const boostedGasPrice = gasPrice.mul(12).div(10); // %20 artış
+        const boostedGasPrice = gasPrice.mul(12).div(10);
 
-        // Nonce kontrolü
         const currentNonce = await wallet.getTransactionCount();
         if (currentNonce !== selectedRelayer.nonce) {
-          logDebug('Nonce güncelleniyor:', {
-            stored: selectedRelayer.nonce,
-            current: currentNonce
-          });
           selectedRelayer.nonce = currentNonce;
         }
 
@@ -207,30 +163,16 @@ async function processQueue() {
         let txResponse;
         if (tx.type === 'bossHit') {
           const estimatedGas = await gameContract.estimateGas.bossHit(tx.account, txParams);
-          txParams.gasLimit = estimatedGas.mul(12).div(10).toNumber(); // %20 buffer
+          txParams.gasLimit = estimatedGas.mul(12).div(10).toNumber();
           
           txResponse = await gameContract.bossHit(tx.account, txParams);
-          logDebug('Boss hit transaction gönderildi:', txResponse.hash);
-          
           const receipt = await txResponse.wait(1);
-          logDebug('Boss hit transaction onaylandı:', {
-            hash: receipt.transactionHash,
-            blockNumber: receipt.blockNumber,
-            gasUsed: receipt.gasUsed.toString()
-          });
         } else if (tx.type === 'rewardToken' && tx.coinCount !== undefined) {
           const estimatedGas = await gameContract.estimateGas.rewardToken(tx.account, tx.coinCount, txParams);
-          txParams.gasLimit = estimatedGas.mul(12).div(10).toNumber(); // %20 buffer
+          txParams.gasLimit = estimatedGas.mul(12).div(10).toNumber();
           
           txResponse = await gameContract.rewardToken(tx.account, tx.coinCount, txParams);
-          logDebug('Token ödül transaction gönderildi:', txResponse.hash);
-          
           const receipt = await txResponse.wait(1);
-          logDebug('Token ödül transaction onaylandı:', {
-            hash: receipt.transactionHash,
-            blockNumber: receipt.blockNumber,
-            gasUsed: receipt.gasUsed.toString()
-          });
         }
 
         selectedRelayer.nonce++;
@@ -238,30 +180,18 @@ async function processQueue() {
 
       } catch (error: unknown) {
         const err = error as ErrorWithDetails;
-        console.error('[HATA] Transaction işleme hatası:', {
-          error: err.message,
-          code: err.code,
-          reason: err.reason
-        });
-
         if (err.code === 'NONCE_EXPIRED' || err.code === 'REPLACEMENT_UNDERPRICED') {
           const newNonce = await wallet.getTransactionCount();
           selectedRelayer.nonce = newNonce;
-          logDebug('Nonce güncellendi:', newNonce);
         } else if (err.code === 'INSUFFICIENT_FUNDS') {
-          // Relayer'ı havuzdan çıkar
           delete relayers[selectedRelayerKey];
-          logDebug('Yetersiz bakiye, relayer kaldırıldı:', wallet.address);
-          
           if (Object.keys(relayers).length === 0) {
-            throw new Error('Tüm relayerlar tükendi');
+            throw new Error('All relayers exhausted');
           }
         } else {
-          // Diğer hatalarda işlemi tekrar kuyruğa ekle
           const failedTx = txQueue.shift();
           if (failedTx) {
             txQueue.push(failedTx);
-            logDebug('Başarısız işlem tekrar kuyruğa eklendi');
           }
         }
       } finally {
@@ -272,42 +202,30 @@ async function processQueue() {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
   } catch (error) {
-    console.error('[KRITIK HATA] Kuyruk işleme hatası:', error);
+    // Handle error silently
   } finally {
     isProcessingQueue = false;
-    logDebug('Kuyruk işleme tamamlandı');
   }
 }
 
 // API endpoint handler
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
     res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,Access-Control-Allow-Origin,X-HTTP-Method-Override,Content-Type,Authorization,Accept');
 
-    // OPTIONS request handling
     if (req.method === 'OPTIONS') {
       return res.status(200).end();
     }
 
-    // POST isteği ile işlem kuyruğuna ekle
     if (req.method === 'POST') {
-      logDebug('POST isteği alındı:', req.body);
       const { type, account, coinCount } = req.body;
 
-      // RPC bağlantısını kontrol et
       try {
         const network = await provider.getNetwork();
-        logDebug('RPC Bağlantısı:', {
-          name: network.name,
-          chainId: network.chainId,
-          ensAddress: network.ensAddress
-        });
       } catch (error: unknown) {
         const err = error as ErrorWithDetails;
-        console.error('[ERROR] RPC bağlantı hatası:', err);
         return res.status(500).json({
           success: false,
           error: 'RPC connection failed',
@@ -316,7 +234,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       if (!type || !account) {
-        logDebug('Eksik parametreler:', { type, account, coinCount });
         return res.status(400).json({ 
           success: false,
           error: 'Transaction type and account address are required' 
@@ -324,16 +241,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       if (type === 'rewardToken' && coinCount === undefined) {
-        logDebug('Reward token için coin count eksik');
         return res.status(400).json({ 
           success: false,
           error: 'Coin count is required for reward token transactions' 
         });
       }
 
-      // İlk istek ise relayer havuzunu başlat
       if (Object.keys(relayers).length === 0) {
-        logDebug('Relayer havuzu boş, başlatılıyor...');
         const initialized = await initializeRelayers();
         if (!initialized) {
           return res.status(500).json({ 
@@ -343,7 +257,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       }
 
-      // Relayer havuzunun durumunu kontrol et
       const relayerStatus = Object.entries(relayers).map(([key, info]) => {
         const wallet = new ethers.Wallet(key, provider);
         return {
@@ -352,9 +265,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           isProcessing: info.isProcessing
         };
       });
-      logDebug('Relayer havuzu durumu:', relayerStatus);
 
-      // Game contract'ı kontrol et
       try {
         const wallet = new ethers.Wallet(Object.keys(relayers)[0], provider);
         const gameContract = new ethers.Contract(
@@ -363,13 +274,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           wallet
         );
         const owner = await gameContract.owner();
-        logDebug('Game contract durumu:', {
-          address: gameContract.address,
-          owner: owner
-        });
       } catch (error: unknown) {
         const err = error as ErrorWithDetails;
-        console.error('[ERROR] Game contract kontrol hatası:', err);
         return res.status(500).json({
           success: false,
           error: 'Game contract check failed',
@@ -387,18 +293,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         txRequest.coinCount = coinCount;
       }
 
-      logDebug('İşlem kuyruğa ekleniyor:', txRequest);
       txQueue.push(txRequest);
 
-      // Kuyruk işleme başlat
       try {
-        await processQueue().catch((error: unknown) => {
-          const err = error as ErrorWithDetails;
-          console.error('[ERROR] Kuyruk işlenirken hata:', err);
-          throw err;
-        });
+        await processQueue();
       } catch (error: unknown) {
-        logDebug('Kuyruk işleme hatası yakalandı, devam ediliyor...');
+        // Handle error silently
       }
 
       const queueInfo = {
@@ -417,11 +317,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       };
 
-      logDebug('API yanıtı:', queueInfo);
       return res.status(200).json(queueInfo);
     }
 
-    // GET isteği ile havuz durumunu kontrol et
     if (req.method === 'GET') {
       const status = {
         success: true,
@@ -441,7 +339,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           currentQueue: txQueue
         }
       };
-      logDebug('GET yanıtı:', status);
       return res.status(200).json(status);
     }
 
@@ -452,7 +349,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   } catch (error: unknown) {
     const err = error as ErrorWithDetails;
-    console.error('[ERROR] API handler error:', err);
     return res.status(500).json({ 
       success: false,
       error: 'Internal server error',
